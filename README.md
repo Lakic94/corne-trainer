@@ -15,7 +15,15 @@ npm test      # unit suites (node --test)
 npm run build # static build into dist/ (deployable anywhere)
 ```
 
-Deploy: push to `main` → GitHub Action builds, tests, and publishes `dist/` to GitHub Pages. Needs a repo with Pages enabled (Settings → Pages → Source: GitHub Actions).
+Deploy: the live site is **https://lakic94.github.io/corne-trainer/** (GitHub Pages, branch `gh-pages`).
+Republish after changes with:
+```sh
+npm run build
+# publish dist/ to gh-pages, then:
+git checkout --orphan gh-pages-tmp  # or see DEPLOY note below
+```
+Simplest republish flow: `npm run build`, copy `dist/` over a `gh-pages` checkout, commit, push.
+To switch to automatic deploys: `gh auth refresh -s workflow`, then move `deploy/pages-workflow.yml` to `.github/workflows/pages.yml`, commit, push — the Action builds, tests, and deploys on every push to `main`.
 
 ## Run
 `npm run dev`, or open the built `dist/index.html` directly (works offline; USB board-read needs the hosted HTTPS version + Chrome/Edge).

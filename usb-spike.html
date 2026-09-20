@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USB spike — WebHID + Vial ping</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; background: #111; color: #eee; }
+  button { font-size: 16px; padding: 10px 18px; margin: 8px 8px 8px 0; cursor: pointer; }
+  pre { background: #000; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; }
+  .ok { color: #51d88a; } .bad { color: #ff5c7a; }
+</style>
+</head>
+<body>
+<h1>USB spike (temporary — delete after go/no-go)</h1>
+<p>Keyboard must be plugged in. Try this page <b>both</b> via <code>npm run dev</code>
+(<code>http://localhost:5173/usb-spike.html</code>) <b>and</b> by double-clicking the file.</p>
+<button id="b1">1. Check WebHID support</button>
+<pre id="o1">…</pre>
+<button id="b2">2. Pick keyboard + ping (VIA protocol version)</button>
+<pre id="o2">…</pre>
+<script>
+// SPDX-License-Identifier: GPL-2.0-or-later
+const o1 = document.getElementById('o1'), o2 = document.getElementById('o2');
+function check() {
+  const lines = [];
+  lines.push('secureContext: ' + window.isSecureContext);
+  lines.push('userAgent: ' + navigator.userAgent);
+  lines.push('navigator.hid: ' + ('hid' in navigator ? 'PRESENT ✓' : 'MISSING ✗'));
+  o1.textContent = lines.join('\n');
+  o1.className = ('hid' in navigator) ? 'ok' : 'bad';
+}
+check();
+document.getElementById('b1').onclick = check;
+
+const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join(' ');
+document.getElementById('b2').onclick = async () => {
+  const log = [];
+  try {
+    if (!('hid' in navigator)) throw new Error('WebHID not available in this browser/context');
+    log.push('requesting device (usagePage 0xFF60, usage 0x61)…');
+    const devs = await navigator.hid.requestDevice({ filters: [{ usagePage: 0xFF60, usage: 0x61 }] });
+    if (!devs.length) throw new Error('no device selected');
+    const dev = devs[0];
+    log.push('selected: ' + (dev.productName || '?') + ' by ' + (dev.manufacturerName || '?'));
+    await dev.open();
+    log.push('opened ✓, sending GET_PROTOCOL_VERSION (0x01)…');
+    const msg = new Uint8Array(32); msg[0] = 0x01;
+    const reply = await new Promise((resolve, reject) => {
+      const to = setTimeout(() => reject(new Error('timeout waiting for reply (3s)')), 3000);
+      const onReport = (e) => {
+        if (e.reportId !== 0) return;
+        clearTimeout(to);
+        dev.removeEventListener('inputreport', onReport);
+        resolve(e.data.buffer);
+      };
+      dev.addEventListener('inputreport', onReport);
+      dev.sendReport(0, msg).catch(reject);
+    });
+    const bytes = new Uint8Array(reply);
+    log.push('reply (' + bytes.length + ' bytes): ' + hex(reply));
+    if (bytes[0] === 0x01 && bytes.length >= 3) {
+      const ver = (bytes[1] << 8) | bytes[2];
+      log.push('VIA protocol version: ' + ver + '  →  GO ✓ (board speaks Vial/VIA)');
+    } else {
+      log.push('unexpected reply shape — paste this whole log back for analysis');
+    }
+    await dev.close();
+  } catch (err) {
+    log.push('✗ ' + (err && err.message ? err.message : err));
+  }
+  o2.textContent = log.join('\n');
+};
+</script>
+</body>
+</html>

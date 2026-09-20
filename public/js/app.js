@@ -138,6 +138,12 @@ function renderBoard(el, layerIdx, opts={}){
     keyEl.style.top=(k.y*KEY_STEP)+'px';
     keyEl.style.width=((k.w||1)*KEY_STEP-6)+'px';
     keyEl.style.height=((k.h||1)*KEY_STEP-6)+'px';
+    if(k.r){ // rotated clusters (e.g. splayed thumbs): pivot from the definition
+      keyEl.style.transform=`rotate(${k.r}deg)`;
+      if(k.rx!==undefined && k.ry!==undefined){
+        keyEl.style.transformOrigin=`${(k.rx-k.x)*KEY_STEP}px ${(k.ry-k.y)*KEY_STEP}px`;
+      }
+    }
     board.appendChild(keyEl);
   }
   el.appendChild(board);
@@ -349,6 +355,31 @@ function bootBoards(){
   renderBoard(document.getElementById('liveKeyboard'),activeLayer);
   renderTarget();
 }
+/* USB-installed board (called by the usb module; plain function => window-visible) */
+function setCustomBoard(def){ store.customDef = def; store.variant = 'custom'; save(); }
+/* manual thumb-order override: cycles the 3 thumb assignments of one half */
+function cycleThumbs(side){
+  const ids = side==='L' ? ['LT0','LT1','LT2'] : ['RT0','RT1','RT2'];
+  const empty=()=>({label:'',output:'',type:'print'});
+  for(const L of store.layers){
+    const a = ids.map(id => L.keys[id]||empty());
+    ids.forEach((id,i)=>{ L.keys[id]=a[(i+1)%3]; });
+  }
+  save(); bootBoards();
+}
+document.getElementById('btnThumbsL').onclick=()=>cycleThumbs('L');
+document.getElementById('btnThumbsR').onclick=()=>cycleThumbs('R');
+document.getElementById('btnUsb').onclick=async()=>{
+  const btn=document.getElementById('btnUsb'), status=document.getElementById('usbStatus');
+  btn.disabled=true; status.textContent='starting…';
+  try{
+    if(!window.CorneUSB || !window.CorneUSB.connect) throw new Error('USB module not loaded (use the built app or dev server).');
+    const res=await window.CorneUSB.connect((m)=>{ status.textContent=m; });
+    syncBoardUI(); bootBoards();
+    alert(res.msg);
+  }catch(err){ status.textContent='✗ '+(err.message||err); }
+  finally{ btn.disabled=false; }
+};
 function syncBoardUI(){
   const sel=document.getElementById('variantSelect');
   if(store.customDef && ![...sel.options].some(o=>o.value==='custom')){

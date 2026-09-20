@@ -332,21 +332,6 @@ function vilMapFlatLayer(all, tapDance, unknowns) {
   vilPosIds().forEach(p => { if (!keys[p]) keys[p] = { label: '', output: '', type: 'print' }; });
   return keys;
 }
-/* QWERTY-run score: correct mirroring lines base letters up as qwertyuiop/... */
-function vilRunScore(keys) {
-  const rows = [
-    ['L00', 'L01', 'L02', 'L03', 'L04', 'L05', 'R00', 'R01', 'R02', 'R03', 'R04', 'R05'],
-    ['L10', 'L11', 'L12', 'L13', 'L14', 'L15', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15'],
-    ['L20', 'L21', 'L22', 'L23', 'L24', 'L25', 'R20', 'R21', 'R22', 'R23', 'R24', 'R25']];
-  const runs = ['qwerty', 'yuiop', 'asdfg', 'hjkl', 'zxcv', 'bnm'];
-  let s = 0;
-  for (const row of rows) {
-    const str = row.map(p => ((keys[p] || {}).output || '')).join('').toLowerCase().replace(/[^a-z]/g, '');
-    for (const run of runs) if (str.includes(run)) s++;
-  }
-  return s;
-}
-
 function vilImport(parsed) {
   const tapDance = parsed.tap_dance || [];
   let vilLayers = null, form = 'matrix';
@@ -377,13 +362,9 @@ function vilImport(parsed) {
     return vilMapFlatLayer(sq, tapDance, unknowns);
   };
 
-  // auto-detect mirroring: try all 4 combos on layer 0, keep the QWERTY-best
-  const combos = [[false, true], [false, false], [true, true], [true, false]];
-  let mL = false, mR = true, best = -1;
-  for (const [a, b] of combos) {
-    const s = vilRunScore(mapWith(vilLayers[0], a, b, []));
-    if (s > best) { best = s; mL = a; mR = b; }
-  }
+  // split halves are wired mirrored on Corne-likes: fixed mapping, with the
+  // manual ⇄ Mirror button in the UI for oddballs (no QWERTY guessing)
+  const mL = false, mR = true;
 
   const rawLayers = vilLayers.map(layer => mapWith(layer, mL, mR, dropped));
   return vilCommit(rawLayers, { detectVariant: true, mirrorNote: (mR ? 'mirrored' : 'as-stored'), unknowns, dropped });

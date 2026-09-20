@@ -31,18 +31,20 @@ eq(vilDecode('TG(2)', [], U), { label: 'TG2', output: '', type: 'special' }, 'to
 eq(vilDecode('RGB_TOG', [], U).label, 'RGB', 'rgb');
 eq(vilDecode('KC_MUTE', [], U).type, 'special', 'media');
 
-// visual full-width form: 12-wide rows, right half stored plain
+// visual full-width form: 12-wide rows, right half stored mirrored (outer->inner,
+// as real split firmware matrices run) — display un-mirrors it back
 store = { layers: [], layerNames: [], variant: 'corne42' };
 const visualVil = { layout: [[
-  ['KC_TAB','KC_Q','KC_W','KC_E','KC_R','KC_T','KC_Y','KC_U','KC_I','KC_O','KC_P','KC_BSPC'],
-  ['KC_ESC','KC_A','KC_S','KC_D','KC_F','KC_G','KC_H','KC_J','KC_K','KC_L','KC_SCLN','KC_QUOT'],
-  ['KC_LSFT','KC_Z','KC_X','KC_C','KC_V','KC_B','KC_N','KC_M','KC_COMM','KC_DOT','KC_SLSH','KC_RSFT'],
-  ['KC_LCTL','MO(1)','KC_SPC','KC_ENT','MO(2)','KC_LGUI'],
+  ['KC_TAB','KC_Q','KC_W','KC_E','KC_R','KC_T','KC_BSPC','KC_P','KC_O','KC_I','KC_U','KC_Y'],
+  ['KC_ESC','KC_A','KC_S','KC_D','KC_F','KC_G','KC_QUOT','KC_SCLN','KC_L','KC_K','KC_J','KC_H'],
+  ['KC_LSFT','KC_Z','KC_X','KC_C','KC_V','KC_B','KC_RSFT','KC_SLSH','KC_DOT','KC_COMMA','KC_M','KC_N'],
+  ['KC_LCTL','MO(1)','KC_SPC','KC_LGUI','MO(2)','KC_ENT'],
 ]] };
 let r = vilImport(visualVil);
 eq(r.ok, true, 'visual import ok');
 eq(store.layers[0].keys['L01'], { label: 'Q', output: 'q', type: 'print' }, 'visual L01 = Q');
 eq(store.layers[0].keys['R00'], { label: 'Y', output: 'y', type: 'print' }, 'visual R00 = Y');
+eq(store.layers[0].keys['R05'], { label: 'Bksp', output: 'Backspace', type: 'special' }, 'visual R05 = Bksp (outer)');
 eq(store.layers[0].keys['RT0'], { label: 'Enter', output: 'Enter', type: 'special' }, 'visual RT0 = Enter');
 eq(store.layers[0].keys['LT2'], { label: 'Spc', output: ' ', type: 'special' }, 'visual LT2 = Spc');
 globalThis.__testFails = __fails;

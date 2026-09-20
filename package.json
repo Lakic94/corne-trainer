@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test test/vil-decode.test.js test/vil-real-file.test.js test/board-def.test.js"
+    "test": "node --test test/vil-decode.test.js test/vil-real-file.test.js test/board-def.test.js test/kle.test.js test/xz.test.js test/protocol.test.js"
   },
   "dependencies": {
     "xz-decompress": "^0.2.3"

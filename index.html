@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corne Trainer — split keyboard typing + layers + shortcuts</title>
+<link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>⌨️ Corne Trainer <span class="sub">v4.1 · Mac · Vial edition</span></h1>
+    <p class="tagline">Fix bad habits. Learn your layers. Drill your shortcuts. Monkeytype-style, but it tells you <b>what you actually pressed</b>.</p>
+  </div>
+  <div class="header-actions">
+    <button id="btnExport" title="Download layout + shortcuts as JSON">⬇ Export</button>
+    <button id="btnImport" title="Import backup JSON or Vial .vil layout">⬆ Import (.vil)</button>
+    <input type="file" id="fileImport" accept=".json,.vil,application/json" hidden>
+    <button id="btnReset" title="Restore default Corne layout">↺ Defaults</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="type" class="active">⌨️ Type</button>
+  <button data-tab="shortcuts">⚡ Shortcuts</button>
+  <button data-tab="layout">🗺️ Layout / Layers</button>
+  <button data-tab="help">❓ Help</button>
+</nav>
+
+<main>
+<!-- ============ TYPE TAB ============ -->
+<section id="tab-type" class="tab active">
+  <div class="controls">
+    <label>Drill:
+      <select id="drillSelect">
+        <option value="home">Home row basics</option>
+        <option value="common">Common English words</option>
+        <option value="code">Code symbols (brackets, etc.)</option>
+        <option value="numbers">Numbers + symbols (Lower layer)</option>
+        <option value="custom">Custom text…</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="chkHighlight" checked> Highlight next key</label>
+    <label><input type="checkbox" id="chkShowHands" checked> Finger hints</label>
+    <button id="btnNew">↻ New text</button>
+  </div>
+  <div id="customRow" class="hidden">
+    <textarea id="customText" rows="2" placeholder="Paste or type your own drill text here, then press New text"></textarea>
+  </div>
+
+  <div class="stats">
+    <div><span id="statWpm">0</span><small>WPM</small></div>
+    <div><span id="statAcc">100%</span><small>ACC</small></div>
+    <div><span id="statErr">0</span><small>ERRORS</small></div>
+    <div><span id="statLayer">Base</span><small>LAYER VIEW</small></div>
+  </div>
+
+  <div id="typingArea" tabindex="0">
+    <div id="targetText"></div>
+    <div id="mistakeBox" class="hidden"></div>
+  </div>
+  <p class="hint">Click the text above, then type. <b>Hold your layer keys</b> (e.g. LOWER/RAISE thumbs) and the keyboard below switches layers live — just like your Corne.</p>
+
+  <div id="fingerHint" class="finger-hint"></div>
+
+  <h3>Live keyboard <span class="mini">— mirrors your layout, highlights next key, flashes red on miss</span></h3>
+  <div id="liveKeyboard" class="corne"></div>
+
+  <div class="two-col">
+    <div>
+      <h3>Mistake log <span class="mini">— what you pressed vs what was expected</span></h3>
+      <ol id="errorLog" class="error-log"><li class="empty">No mistakes yet. Nice.</li></ol>
+    </div>
+    <div>
+      <h3>Worst keys <span class="mini">— practice these</span></h3>
+      <div id="worstKeys" class="worst">—</div>
+      <button id="btnDrillWorst">Drill my worst keys</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SHORTCUTS TAB ============ -->
+<section id="tab-shortcuts" class="tab">
+  <div class="controls">
+    <button id="btnPracticeShortcuts">▶ Practice mode</button>
+    <button id="btnStopPractice" class="hidden">⏹ Stop</button>
+    <span id="scScore"></span>
+  </div>
+  <div id="scPractice" class="hidden">
+    <div id="scPrompt">Press…</div>
+    <div id="scFeedback"></div>
+  </div>
+  <h3>Cheatsheet — your most-used combos</h3>
+  <p class="hint">These are reference <b>and</b> drills. Click + to add your own (agents, windows, apps). Combos are detected with real modifiers (⌘ ⌥ ⇧ ^).</p>
+  <div id="shortcutGrid" class="sc-grid"></div>
+  <h4>Add shortcut</h4>
+  <form id="scForm" class="sc-form">
+    <input id="scName" placeholder="Name — e.g. Agent: quick paste" required>
+    <label><input type="checkbox" id="scCmd"> ⌘ Cmd</label>
+    <label><input type="checkbox" id="scCtrl"> ^ Ctrl</label>
+    <label><input type="checkbox" id="scAlt"> ⌥ Opt</label>
+    <label><input type="checkbox" id="scShift"> ⇧ Shift</label>
+    <input id="scKey" placeholder="Base key — e.g. V, Tab, P, 1" maxlength="12" required>
+    <input id="scHint" placeholder="Hint / where used (optional)">
+    <button type="submit">+ Add</button>
+  </form>
+</section>
+
+<!-- ============ LAYOUT TAB ============ -->
+<section id="tab-layout" class="tab">
+  <p class="hint">Your Corne has <b>42 keys, 4 layers</b> below. Click any key to edit it (label, what it types, or make it a <b>layer-hold</b> like <code>MO(1)</code>).
+  Vial on web can't be auto-read by a browser — so mirror your Vial map here once, then it saves in this browser. When you hold a layer key while typing, the live keyboard flips to that layer.</p>
+  <div class="controls">
+    <div id="layerTabs" class="layer-tabs"></div>
+    <label>Layer name: <input id="layerName" maxlength="18"></label>
+    <label>Board:
+      <select id="variantSelect">
+        <option value="corne42">Corne 42 (3×6+3)</option>
+        <option value="corne46">Corne+ 46 rev4.1 (ex2)</option>
+      </select>
+    </label>
+    <button id="btnMirror" title="Flip the right half's key order — use if an import came out mirrored">⇄ Mirror right half</button>
+  </div>
+  <div class="controls">
+    <button id="btnLoadBoard" title="Load any QMK info.json as a custom board definition">📐 Load board definition (info.json)</button>
+    <input type="file" id="fileBoard" accept=".json,application/json" hidden>
+    <span id="layoutRow" class="hidden">
+      <select id="layoutPick"></select>
+      <button id="btnUseBoard">Use this layout</button>
+    </span>
+  </div>
+  <div id="editKeyboard" class="corne editable"></div>
+  <div id="keyEditor" class="key-editor hidden">
+    <h4>Edit key <span id="kePos"></span></h4>
+    <label>Label on cap <input id="keLabel" maxlength="10"></label>
+    <label>Types / output <input id="keOutput" maxlength="12" placeholder="e.g. q, 1, [, Enter"></label>
+    <label>Key kind
+      <select id="keType">
+        <option value="print">Normal key (types something)</option>
+        <option value="layer-hold">Layer hold — MO(layer) while held</option>
+        <option value="mod">Modifier — ⌘ ⌥ ^ ⇧</option>
+        <option value="special">Special — Space, Enter, Tab, Bksp…</option>
+      </select>
+    </label>
+    <label id="keLayerRow">Hold shows layer
+      <select id="keLayer"></select>
+    </label>
+    <label>Physical key code <input id="keCode" maxlength="20" placeholder="e.g. KeyQ"></label>
+    <div class="row">
+      <button id="keSave">Save</button>
+      <button id="keCancel">Cancel</button>
+    </div>
+    <p class="mini">Tip: press <b>Capture</b> then hit the physical key to bind its code automatically.</p>
+    <button id="keCapture">◉ Capture physical key</button> <span id="keCapMsg" class="mini"></span>
+  </div>
+</section>
+
+<!-- ============ HELP TAB ============ -->
+<section id="tab-help" class="tab">
+  <h3>How to use this (5 min setup)</h3>
+  <ol class="help">
+    <li>Open <b>Vial (web)</b> next to this app. Go to <b>Layout / Layers</b> tab here, select each layer, and copy your labels over (click a key → edit). Do it once — it autosaves.</li>
+    <li><b>Import your real layout (recommended):</b> in Vial web do <b>File → Save current layout</b> to get a <code>.vil</code> file, then click <b>⬆ Import (.vil)</b> up top and select it. All layers, MO/LT keys, tap-dances and shifted symbols come over automatically (transparent ▽ keys are filled from base).</li>
+    <li>Keys that switch layers in Vial (<code>MO(1)</code>, <code>LOWER</code>, <code>RAISE</code>) → set kind to <b>Layer hold</b> + target layer number. Thumbs are usually these.</li>
+    <li>Go to <b>Type</b>, click the text, type. On a miss you get: <i>expected “e”, you hit “r” (right index, KeyR)</i> — adjust and repeat.</li>
+    <li>Add your real combos in <b>Shortcuts</b> (e.g. <code>⌘+Shift+P</code> agent palette, <code>⌘+Tab</code> window switch). Use <b>Practice mode</b> to drill them with live detection.</li>
+    <li>Split-keyboard technique: thumbs only for Space / Enter / layers, pinkies for outer columns + modifiers. The finger hint under the text tells you which finger <i>should</i> have pressed.</li>
+  </ol>
+  <h3>Corne reference (standard 42-key)</h3>
+  <pre class="mini">Top:    Tab Q W E R T | Y U I O P Bksp
+Home:   Esc A S D F G | H J K L ; '
+Bottom: Sft Z X C V B | N M , . / Sft
+Thumbs (L→R): Ctrl  LOWER  Space | Bksp  Enter  RAISE/Alt
+Lower (hold): numbers + symbols · Raise (hold): arrows + media · Adjust: RGB/reset</pre>
+  <p class="hint">Boards are rendered from real keyboard definitions (matrix → physical positions, stagger included) — Corne 42 and Corne+ 46 rev4.1 (<code>split_3x6_3_ex2</code>) are built in. Got a different board? <b>📐 Load board definition</b> with any QMK <code>info.json</code> (every Vial-supported board has one upstream), pick its layout, then Import your <code>.vil</code> — mapping is deterministic from there, no guessing.</p>
+  <p class="hint"><b>Mirrored right half?</b> Vial stores split right halves reversed on most firmwares — import auto-detects via your QWERTY rows. If letters still look backwards on the right, hit <b>⇄ Mirror right half</b> in Layout.</p>
+  <p class="mini">Files: everything lives in this folder. Open <code>index.html</code> directly — no server, no build, works offline on Mac. Data autosaves to browser localStorage; use Export for backup.</p>
+</section>
+</main>
+
+<footer>Made for un-learning 10 years of bad typing · Corne v4.1 · <span class="mini">tip: keep hands floating, wrists straight</span></footer>
+
+<script src="./js/board-def.js"></script>
+<script src="./js/app.js"></script>
+<script src="./js/vil-import.js"></script>
+<script type="module" src="/src/usb-main.js"></script>
+</body>
+</html>

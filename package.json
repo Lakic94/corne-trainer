@@ -1,0 +1,20 @@
+{
+  "name": "corne-trainer",
+  "version": "1.0.0",
+  "description": "Split-keyboard typing trainer: Vial layers, live layout, shortcut drills",
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test test/vil-decode.test.js test/vil-real-file.test.js test/board-def.test.js"
+  },
+  "dependencies": {
+    "xz-decompress": "^0.2.3"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.0.0"
+  }
+}
